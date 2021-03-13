@@ -10,26 +10,23 @@ RUN apk -U --no-cache add \
                    g++
 
 # Setup go, medpot
-RUN    export GOPATH=/opt/go/ && \
-    mkdir /opt && \
-    mkdir /opt/go && \
-    cd /opt/go && \
-    mkdir ./src && cd src && \
-    git clone https://github.com/schmalle/medpot.git && \
-    go get -d -v github.com/davecgh/go-spew/spew && \
-    go get -d -v github.com/go-ini/ini && \
-    go get -d -v github.com/mozillazg/request && \
-    go get -d -v go.uber.org/zap && \
-    cd /opt/go/src/medpot && \
-    go build medpot && \
-    cp ./medpot /usr/bin/medpot
+ENV GOPATH=/opt/go
+RUN mkdir -p /opt/go/src
+RUN git clone https://github.com/schmalle/medpot.git $GOPATH/src/medpot
+RUN go get -d -v github.com/davecgh/go-spew/spew
+RUN go get -d -v github.com/go-ini/ini
+RUN go get -d -v github.com/mozillazg/request
+RUN go get -d -v go.uber.org/zap
+RUN cd $GOPATH/src/medpot && go build medpot
+RUN cp $GOPATH/src/medpot/medpot /usr/bin/medpot
 
-RUN cd /opt/go/src/medpot/template && \ mkdir /var/log/medpot && \
-    cp ./medpot.log  /var/log/medpot/medpot.log && \
-    mkdir /data && \
-    mkdir /data/medpot && \
+RUN mkdir -p /var/log/medpot
+RUN touch /var/log/medpot/medpot.log
+RUN mkdir -p /data/medpot
+RUN cd $GOPATH/src/medpot/template && \
     cp ./ews.xml /data/medpot/ && \
     cp ./dummyerror.xml /data/medpot/
+RUN cp $GOPATH/src/medpot/dist/etc/ews.cfg /etc/
 
 
 # Setup user, groups and configs
@@ -48,5 +45,5 @@ RUN    apk del --purge build-base \
 
 # Start medpot
 WORKDIR /opt/go/src/medpot
-USER medpot:medpot
+#USER medpot:medpot
 CMD exec medpot
